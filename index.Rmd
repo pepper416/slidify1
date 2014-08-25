@@ -1,0 +1,73 @@
+---
+title : Predict the probability of being admitted by graduate school
+subtitle : Logistic Regression
+author : pepper416
+job         : 
+    framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : [quiz, bootstrap]            # {mathjax, quiz, bootstrap}
+ext_widgets : {rCharts: ["libraries/highcharts","libraries/polycharts", "libraries/nvd3", "libraries/morris"]}
+mode        :  standalone # {standalone, draft,selfcontained}
+---
+    
+## Data Description
+
+    A researcher is interested in how variables, such as GRE (Graduate Record Exam scores),
+GPA (grade point average) and prestige of the undergraduate institution, effect admission
+into graduate school. The response variable, admit/don't admit, is a binary variable.
+
+The dataset can be downloaded from [http://www.ats.ucla.edu/stat/data/binary.csv](http://www.ats.ucla.edu/stat/data/binary.csv)
+```{r}
+mydata <- read.csv("http://www.ats.ucla.edu/stat/data/binary.csv")
+head(mydata)
+```
+
+--- &radio
+## Question
+
+To predict the probality of being admitted, which of the following regression model should we use?
+
+1. linear regression model
+2. _logistic regression model_
+3. randome effect model
+
+*** .hint 
+what is the response variable?
+
+*** .explanation 
+The response variable admin is binary, therefore, we should use logistic regression model.
+
+---
+
+## Logistic regression model
+Since the response variable `admit` is binary, we can fit a logistic regress model to predict the probability of being admitted by graduate school by using `glm()` function.
+```{r}
+mydata$rank <- factor(mydata$rank)
+mylogit <- glm(admit ~ gre + gpa + rank, data = mydata, family = "binomial")
+```
+
+## Prediction
+```{r}
+GRE = 1600;GPA = 4;Rank = 1;
+# predict the probablity of being admitted
+pred = predict(mylogit,newdata=list(gre=GRE,gpa=GPA,rank=as.factor(Rank)),
+interval=("confidence"),type = "link", se = TRUE)
+PredictedProb <- plogis(pred$fit)
+```
+Based on our model, if a student has GRE = 1600, GPA= 4, and graduates from the university with prestige rank 1, the predicted probability of being admitted is `r round(PredictedProb,2)`.
+
+
+---
+## Average GRE score grouped by GPA and Rank.
+```{r setup, message = F, echo=F, cache = F}
+require(rCharts)
+knitr::opts_chunk$set(comment = NA, results = 'asis', tidy = F, message = T)
+```
+```{r chart1, fig.height=2, fig.width= 10}
+mydata$gpa_group = cut(mydata$gpa, breaks = c(2,3,3.5,4))
+df_mydata = aggregate(gre ~ gpa_group + rank, data=mydata, mean)
+p1 <- nPlot(gre ~ gpa_group, group = 'rank', data = df_mydata, type = 'multiBarChart')
+p1$chart(color = c('brown', 'blue', '#594c26', 'green'))
+p1$print('chart1')
+```
